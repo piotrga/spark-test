@@ -4,7 +4,7 @@ import org.scalatest.{FreeSpec, GivenWhenThen, Matchers}
 class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
 
   "single row" in {
-    runB(Array(user1_song1)) should be (
+    runC(Array(user1_song1)) should be (
       Array(("user-1", Session(1239152267000L, 1239152267000L, List("Song-1"))))
     )
   }
@@ -13,12 +13,12 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
     import scala.concurrent.duration._
     val input = Array(
       user1_song1,
-      user1_song1.delay(10.minutes),
-      user1_song1.delay(20.minutes)
+      user1_song1.delay(10.minutes).copy(songId = "Song-2"),
+      user1_song1.delay(20.minutes).copy(songId = "Song-3")
     )
 
-    runB(input) should be (
-      Array(("user-1", Session(1239152267000L, 1239152267000L + 20.minutes.toMillis, List("Song-1", "Song-1", "Song-1"))))
+    runC(input) should be (
+      Array(("user-1", Session(1239152267000L, 1239152267000L + 20.minutes.toMillis, songsReversed = List("Song-3", "Song-2", "Song-1"))))
     )
   }
 
@@ -33,7 +33,7 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
       user1_song1.delay(1.hour)
     )
 
-    runB(input) should have length 2
+    runC(input) should have length 2
   }
 
   "returns 10 longest" in {
@@ -41,12 +41,12 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
     val _11 = (1 to 11).toArray
       .flatMap (i => (1 to i) map ( x => user1_song1.delay(x.minutes).copy(userId = i.toString, songId = s"song-$i-$x") ) )
 
-    val result = runB(_11)
+    val result = runC(_11)
     result should have length 10
     result.map(_._2.size) should be ((2 to 11).toList.reverse)
   }
 
-  private def runB(input: Array[Played]) : Array[(String, C.Session)] = spark.withLocalSQLContext{ sql =>
+  private def runC(input: Array[Played]) : Array[(String, C.Session)] = spark.withLocalSQLContext{ sql =>
     C(sql.sparkContext.parallelize(input).coalesce(1))
   }
 
