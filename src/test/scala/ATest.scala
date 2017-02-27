@@ -4,7 +4,7 @@ class ATest extends FreeSpec with Matchers with TestFixtures{
 
   "single row" in {
     runA(Array(user1_song1)) should be (
-      Array(Result("user-1", 1))
+      Array(("user-1", 1))
     )
   }
 
@@ -17,7 +17,7 @@ class ATest extends FreeSpec with Matchers with TestFixtures{
     )
 
     runA(input) should be (
-      Array(Result("user-1", 1))
+      Array(("user-1", 1))
     )
   }
 
@@ -31,18 +31,16 @@ class ATest extends FreeSpec with Matchers with TestFixtures{
     )
 
     runA(input) should be (Array(
-      Result("user-1", 2),
-      Result("user-2", 2)
+      ("user-1", 2),
+      ("user-2", 2)
     ))
   }
 
   private def runA(input: Array[Played]) = spark.withLocalSQLContext{ sql =>
     A(sql.sparkContext.parallelize(input).coalesce(1))
       .collect()
-      .map(r => Result(r.getString(0), r.getLong(1) ))
   }
 
-  case class Result(userId: String, count: Long)
 
 }
 

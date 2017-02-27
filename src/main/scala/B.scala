@@ -1,14 +1,18 @@
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
 
+/**
+  * Part B
+  * Create a list of the 100 most popular songs (artist and title) in the dataset, with the number of times
+  * each was played.
+  */
 object B{
-  def apply(raw:RDD[Played]): DataFrame = {
-    val sql = new SQLContext(raw.sparkContext)
-    import sql.implicits._
+  def apply(raw:RDD[Played]) : Array[Result] =
+    raw
+      .map (p => ((p.author, p.song), 1L))
+      .reduceByKey(_+_)
+      .top(100)(Ordering.by{case (k,count) => count })
+      .map{case ((artist, song), count) => Result(artist, song, count )}
 
-    raw.toDF()
-      .registerTempTable("played")
+  case class Result(artist: String, song: String , played: Long)
 
-    sql.sql("select author, song, count(*) from played group by author, song order by count(*) desc limit 100")
-  }
 }

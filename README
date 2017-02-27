@@ -1,6 +1,38 @@
 Running:
-sbt run (A|B|C) source-tsv target-csv
+============
+Main class is used to start all 3 jobs (A/B/C).
+
+It takes 3 arguments:
+job-name input-file output-file
 
 i.e.
-sbt run A x.tsv a.csv
+A x.tsv a.csv
+B x.tsv b.csv
+C x.tsv c.csv
 
+Alternative approaches
+=============
+
+A.
+Brute force:
+cut -d$'\t' -f 1,5 | sort | uniq | cut -d$'\t' -f 1 | uniq -c
+
+But seriously I could split the file into partitions and run distinct(userid, songid) on each partition i.e.
+cut -d$'\t' -f 1,5 | sort | uniq
+Then when we drop the songId (cut -d$'\t' -f 1) we are turning the problem into a word count so map-reduce would do.
+
+B.
+Problem has 2 parts:
+1. word count where the key is (author, song)
+2. finding top x elements - (hopefully) without sorting
+
+1. Word count - map-reduce
+2. if the data is partitioned we can simply find top x of each partition in O(n log2 x) ~ O(n) for small x, see [https://en.wikipedia.org/wiki/Selection_algorithm#Space_complexity]
+Then we just need to put together all top x for each partition and run the same algorithm on them. O(k * x)  (k - number of partitions) which should be negligable
+
+C.
+Problem can be broken up into following parts:
+1. sort partitions by (userId, timestamp) - O(n log n)
+2. find sessions in each partition  O(n)
+3. merge sorted partitions and sessions O(n)
+4. find top x (see solution B)

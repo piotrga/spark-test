@@ -1,3 +1,4 @@
+import B.Result
 import org.scalatest.{FreeSpec, GivenWhenThen, Matchers}
 
 class BTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
@@ -35,12 +36,7 @@ class BTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
 
   private def runB(input: Array[Played]) = spark.withLocalSQLContext{ sql =>
     B(sql.sparkContext.parallelize(input).coalesce(1))
-      .collect()
-      .map(r => Result(r.getString(0), r.getString(1), r.getLong(2) ))
-
   }
-
-  case class Result(artist: String, song: String , played: Long)
 
 }
 

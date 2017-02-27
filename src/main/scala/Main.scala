@@ -11,10 +11,10 @@ object Main extends App with SparkSugars {
   val outFileName = args(2)
 
   spark.withLocalSQLContext { sql =>
-    val transform = args(0) match {
+    val transform : RDD[Played] => RDD[_]  = args(0) match {
       case "A" => A.apply _
-      case "B" => B.apply _
-      case "C" => (x:RDD[Played]) => sql.createDataFrame(C.apply(x))
+      case "B" => x => sql.sparkContext.parallelize(B.apply(x))
+      case "C" =>  x => sql.sparkContext.parallelize(C.apply(x))
     }
 
     val played = sql.read.csv(inputFileName)
@@ -22,7 +22,8 @@ object Main extends App with SparkSugars {
 
     transform(played)
       .coalesce(1)
-      .write.csv(outFileName, header = true)
+      .saveAsTextFile(outFileName)
+    //      .write.csv(outFileName, header = true)
   }
 }
 
