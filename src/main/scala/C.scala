@@ -1,4 +1,5 @@
 import java.text.SimpleDateFormat
+import java.util.Date
 
 import org.apache.spark.rdd.RDD
 
@@ -11,14 +12,21 @@ import scala.util.Try
 object C{
   private val df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
-  def apply(played:RDD[Played]) : Array[(String, Session)] =
+  def apply(played:RDD[Played]) : Array[Result] =
     played
       .flatMap(p => Try(p.userId, TimestampSong(df.parse(p.timestamp).getTime, p.songId)).toOption)
       .groupByKey() // big shuffle..., could combine with sorting (repartitionAndSortWithinPartitions) but the solution would be way less elegant. See branch version2
       .mapValues(_.toList.sortBy(_.timestamp)) // O(n log n), should be ok in memory as we're not expecting humongus playlists per user
       .flatMapValues(toSessions) // O(n)
       .top(10)(Ordering.by(_._2.size)) // O(n) + tiny shuffle
+      .map{ case (userId, session) =>
+        Result(userId,
+          df.format(new Date(session.firstSongTimestamp)),
+          df.format(new Date(session.lastSongTimestamp)),
+          session.songs)
+    }
 
+  case class Result(userId: String, firstTimestamp: String, lastTimeStamp: String, songs: List[String])
   case class TimestampSong(timestamp:Long, songId:String)
 
   case class Session(firstSongTimestamp:Long, lastSongTimestamp:Long, songsReversed: List[String]) {

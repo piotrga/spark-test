@@ -1,11 +1,11 @@
-import C.Session
+import C.{Result, Session}
 import org.scalatest.{FreeSpec, GivenWhenThen, Matchers}
 
 class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
 
   "single row" in {
     runC(Array(user1_song1)) should be (
-      Array(("user-1", Session(1239152267000L, 1239152267000L, List("Song-1"))))
+      Array(Result("user-1", "2009-04-08T01:57:47Z", "2009-04-08T01:57:47Z", List("Song-1")))
     )
   }
 
@@ -18,7 +18,7 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
     )
 
     runC(input) should be (
-      Array(("user-1", Session(1239152267000L, 1239152267000L + 20.minutes.toMillis, songsReversed = List("Song-3", "Song-2", "Song-1"))))
+      Array(Result("user-1", "2009-04-08T01:57:47Z", "2009-04-08T02:17:47Z",  List("Song-1", "Song-2", "Song-3")))
     )
   }
 
@@ -31,7 +31,7 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
     )
 
     runC(input) should be (
-      Array(("user-1", Session( 1239152267000L, 1239152267000L + 20.minutes.toMillis, songsReversed = List("Song-3", "Song-2", "Song-1"))))
+      Array(Result("user-1", "2009-04-08T01:57:47Z", "2009-04-08T02:17:47Z",  List("Song-1", "Song-2", "Song-3")))
     )
   }
 
@@ -56,10 +56,10 @@ class CTest extends FreeSpec with Matchers with TestFixtures with GivenWhenThen{
 
     val result = runC(_11)
     result should have length 10
-    result.map(_._2.size) should be ((2 to 11).toList.reverse)
+    result.map(_.songs.size) should be ((2 to 11).toList.reverse)
   }
 
-  private def runC(input: Array[Played]) : Array[(String, C.Session)] = spark.withLocalSQLContext{ sql =>
+  private def runC(input: Array[Played]) : Array[C.Result] = spark.withLocalSQLContext{ sql =>
     C(sql.sparkContext.parallelize(input).coalesce(1))
   }
 

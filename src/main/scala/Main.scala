@@ -2,6 +2,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DataFrame
 
 import scala.concurrent.duration.Duration
 
@@ -11,10 +12,11 @@ object Main extends App with SparkSugars {
   val outFileName = args(2)
 
   spark.withLocalSQLContext { sql =>
-    val transform : RDD[Played] => RDD[_]  = args(0) match {
-      case "A" => A.apply _
-      case "B" => x => sql.sparkContext.parallelize(B.apply(x))
-      case "C" =>  x => sql.sparkContext.parallelize(C.apply(x))
+    import sql.implicits._
+    val transform : RDD[Played] => DataFrame  = args(0) match {
+      case "A" => x => A(x).toDF("userId", "uniqueSongCount")
+      case "B" => x => sql.createDataFrame(B(x))
+      case "C" =>  x => sql.createDataFrame(C(x))
     }
 
     val played = sql.read.csv(inputFileName)
@@ -22,7 +24,8 @@ object Main extends App with SparkSugars {
 
     transform(played)
       .coalesce(1)
-      .saveAsTextFile(outFileName)
+      .write.csv(outFileName, header = true)
+//      .saveAsTextFile(outFileName)
   }
 }
 
