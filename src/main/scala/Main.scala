@@ -1,51 +1,36 @@
-//import java.io.FileWriter
-//
-//import org.apache.spark
-//import org.apache.spark._
-//import org.apache.spark.sql._
-//
-//import scala.util.Random
-//
-//object X extends App{
-//  val FILE= "/tmp/small.csv"
-//  val ROWS= 100000
-//  val SEP = '\n'
-////  save()
-//
-//  def save(): Unit = {
-//    val it = Iterator.fill(ROWS)(List.fill(600)(Random.nextInt(20)*1000000000L))
-//    println("Saving...")
-//    val headers = (1 to 600).map(i => "col-" + i)
-//
-//    val fw = new FileWriter(FILE)
-//    fw.write(headers.mkString(",")+SEP)
-//    try it.foreach(row => fw.write(row.mkString(",")+SEP)) finally fw.close()
-//    println("Saving - DONE")
-//  }
-//
-//
-//  val conf = new SparkConf().setAppName("X").setMaster("local[4]")
-//  val sc = new SparkContext(conf)
-//
-//  val sql = new SQLContext(sc)
-//  import sql.implicits._
-//
-//
-//  println("Reading CSV")
-//
-//  val x = sql
-//    .read
-//    .format("com.databricks.spark.csv")
-//    .option("header", "true") // Use first line of all files as header
-//    .option("maxColumns", 1000)
-//    .option("maxCharsPerColumn", 10000)
-//    .option("inferSchema", "true") // Automatically infer data types
-//    .load(FILE)
-//
-//  println("Saving...")
-//
-//  x
-//    .coalesce(1)
-//    .write.parquet("/tmp/small.parquet")
-//  println("Saving  - DONE")
-//}
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import org.apache.spark.rdd.RDD
+
+import scala.concurrent.duration.Duration
+
+object Main extends App with SparkSugars {
+
+  val inputFileName = args(1)
+  val outFileName = args(2)
+
+  spark.withLocalSQLContext { sql =>
+    val transform = args(0) match {
+      case "A" => A.apply _
+      case "B" => B.apply _
+      case "C" => (x:RDD[Played]) => sql.createDataFrame(C.apply(x))
+    }
+
+    val played = sql.read.csv(inputFileName)
+      .map(r => Played(r.getString(0), r.getString(1), r.getString(2), r.getString(3), r.getString(4), r.getString(5) ))
+
+    transform(played)
+      .coalesce(1)
+      .write.csv(outFileName, header = true)
+  }
+}
+
+case class Played(userId: String, timestamp: String, authorId: String, author:String, songId: String, song: String){
+  def delay(by : Duration) = this.copy(timestamp = Played.df.format(new Date(this.timeststampAsDate.getTime + by.toMillis)))
+  def timeststampAsDate : Date = Played.df.parse(timestamp)
+}
+
+object Played{
+  val df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+}

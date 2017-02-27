@@ -1,0 +1,6 @@
+Running:
+sbt run (A|B|C) source-tsv target-csv
+
+i.e.
+sbt run A x.tsv a.csv
+
