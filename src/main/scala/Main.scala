@@ -23,7 +23,6 @@ object Main extends App with SparkSugars {
     transform(played)
       .coalesce(1)
       .saveAsTextFile(outFileName)
-    //      .write.csv(outFileName, header = true)
   }
 }
 
