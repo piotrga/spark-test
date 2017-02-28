@@ -34,5 +34,5 @@ C.
 Problem can be broken up into following parts:
 1. sort partitions by (userId, timestamp) - O(n log n)
 2. find sessions in each partition  O(n)
-3. merge sorted partitions and sessions O(n)
+3. merge sorted partitions and sessions O(n) + shuffle(n)
 4. find top x (see solution B)
