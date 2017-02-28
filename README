@@ -27,7 +27,7 @@ Problem has 2 parts:
 2. finding top x elements - (hopefully) without sorting
 
 1. Word count - map-reduce
-2. if the data is partitioned we can simply find top x of each partition in O(n log2 x) ~ O(n) for small x, see [https://en.wikipedia.org/wiki/Selection_algorithm#Space_complexity]
+2. if the data is partitioned we can simply find top x of each partition in O(n log2 x) ~ O(n) for small x, see [https://en.wikipedia.org/wiki/Selection_algorithm]
 Then we just need to put together all top x for each partition and run the same algorithm on them. O(k * x)  (k - number of partitions) which should be negligable
 
 C.
